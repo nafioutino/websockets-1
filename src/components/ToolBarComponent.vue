@@ -1,52 +1,111 @@
+<script setup lang="ts">
+import { Paintbrush, Eraser, RotateCcw, Download } from "lucide-vue-next";
+import { ref } from "vue";
+import { useDrawingStore } from "@/stores/useDrawingStore";
+import { clearCanvas } from "@/utils/canvas";
+const drawingStore = useDrawingStore();
+
+const previousColor = ref(drawingStore.color);
+// Référence pour stocker la couleur précédente
+
+const useEraser = () => {
+  previousColor.value = drawingStore.color; // Enregistrer la couleur actuelle avant de changer
+  drawingStore.setColor("white"); // Changer la couleur en blanc
+  drawingStore.setIsEraser(true); // Activer la gomme
+};
+
+const useBrush = () => {
+  drawingStore.setColor(previousColor.value); // Restaurer la couleur précédente
+  drawingStore.setIsEraser(false); // Désactiver la gomme
+};
+
+const handleClear = () => {
+  const canvasElement = document.querySelector(".canvas") as HTMLCanvasElement;
+  if(!canvasElement) return;
+  const ctx = canvasElement.getContext("2d");
+  if(!ctx) return;
+  clearCanvas(ctx, canvasElement.clientWidth, canvasElement.clientHeight);
+}
+</script>
 <template>
-  <div class=" toolbar flex flex-col gap-5 items-center space-y-6 p-8 bg-white shadow-md rounded-xl w-72">
-    <div class="flex space-x-4">
-      <button class="p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
-        <Paintbrush :size="24" />
+  <div
+    class="toolbar flex flex-col items-center shadow-lg p-4 bg-white rounded-lg border border-gray-300 mt-5 w-full"
+  >
+    <!-- Icônes de pinceau et de gomme -->
+     <!-- <div class="flex gap-4 mb-4 w-full justify-center">
+      <button
+        :class="`flex bg-blue-200  transition duration-200 ease-in-out p-3 rounded-lg shadow-md w-full max-w-[100px] justify-center cursor-pointer ${!drawingStore.isEraser ? 'bg-yellow-400' : 'bg-gray-200'}`"
+        @click="useBrush"
+        title="Pinceau"
+      >
+        <Paintbrush :size="40" color="blue" />
       </button>
-      <button class="p-4 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-lg transition">
-        <Eraser :size="24" />
+      <button
+        :class="`flex bg-gray-200 transition duration-200 ease-in-out p-3 rounded-lg shadow-md w-full max-w-[100px] justify-center cursor-pointer ${!drawingStore.isEraser ? 'bg-gray-200' : 'bg-yellow-400'}`"
+        title="Gomme"
+        @click="useEraser"
+      >
+        <Eraser :size="40" color="green" />
+      </button>
+    </div>  -->
+
+    <div class="flex gap-4 mb-4 w-full justify-center">
+      <button
+        :class="`flex bg-blue-200  transition duration-200 ease-in-out p-3 rounded-lg shadow-md w-full max-w-[100px] justify-center cursor-pointer ${!drawingStore.isEraser ? 'bg-yellow-400' : 'bg-gray-200'}`"
+        @click="drawingStore.setIsEraser(false)"
+        title="Pinceau"
+      >
+        <Paintbrush :size="40" color="blue" />
+      </button>
+      <button
+        :class="`flex bg-gray-200 transition duration-200 ease-in-out p-3 rounded-lg shadow-md w-full max-w-[100px] justify-center cursor-pointer ${!drawingStore.isEraser ? 'bg-gray-200' : 'bg-yellow-400'}`"
+        title="Gomme"
+        @click="drawingStore.setIsEraser(true)"
+      >
+        <Eraser :size="40" color="green" />
       </button>
     </div>
-    <div class="flex items-center space-x-4 w-full">
-      <label for="colorPicker" class="text-gray-700">Couleur</label>
-      <input type="color" id="colorPicker" class="w-12 h-12 rounded-lg border" />
-    </div>
-    <div class="flex items-center space-x-4 w-full">
-      <label for="thickness" class="text-gray-700">Épaisseur</label>
+
+    <!-- Conteneur de couleur -->
+    <div class="w-full mb-4" v-if="!drawingStore.isEraser">
+      <label class="mt-2 font-semibold block text-gray-700">Couleur</label>
       <input
-        type="range"
-        id="thickness"
-        min="1"
-        max="100"
-        step="1"
-        value="50"
-        class="w-full cursor-pointer"
+        type="color"
+        class="w-full mt-2 border border-gray-400 rounded-lg p-1"
+        v-model="drawingStore.color"
+        @change="drawingStore.setColor(drawingStore.color)"
       />
     </div>
-    <button
-      class="flex items-center justify-center w-full p-4 bg-red-500 hover:bg-red-600 text-white rounded-lg transition"
-    >
-      <RotateCcw :size="24" />
-      <span class="ml-2">Effacer</span>
-    </button>
-    <button
-      class="flex items-center justify-center w-full p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition"
-    >
-      <Download :size="24" />
-      <span class="ml-2">Télécharger</span>
-    </button>
+
+    <!-- Conteneur d'épaisseur -->
+    <div class="w-full mb-4">
+      <label class="mt-2 font-semibold block text-gray-700">Épaisseur</label>
+      <input
+        type="range"
+        class="w-full mt-2 h-2 bg-gray-300 rounded-lg cursor-pointer"
+        min="1"
+        max="25"
+        v-model="drawingStore.lineWidth"
+        @change="drawingStore.setLineWidth(drawingStore.lineWidth)"
+      />
+    </div>
+
+    <!-- Conteneur de nettoyage et de sauvegarde -->
+    <div class="flex flex-col justify-center p-2 gap-3 w-full">
+      <!-- Nettoyage -->
+      <button
+        class="flex gap-2 bg-red-300 hover:bg-red-400 transition duration-200 ease-in-out p-2 rounded-lg shadow-md w-full cursor-pointer items-center justify-center"
+      >
+        <RotateCcw :size="20" color="red" />
+        <span class="text-red-700 font-semibold" @click="handleClear">Nettoyer</span>
+      </button>
+      <!-- Sauvegarde -->
+      <button
+        class="flex gap-2 bg-blue-200 hover:bg-blue-300 transition duration-200 ease-in-out p-2 rounded-lg shadow-md w-full cursor-pointer items-center justify-center"
+      >
+        <Download :size="20" color="blue" />
+        <span class="text-blue-800 font-semibold">Sauvegarder</span>
+      </button>
+    </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import { Paintbrush, Eraser, RotateCcw, Download } from 'lucide-vue-next'
-</script>
-
-<style scoped>
-input[type='color']::-webkit-color-swatch {
-  border-radius: 8px;
-  border: none;
-}
-</style>
