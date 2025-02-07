@@ -1,20 +1,17 @@
 <template>
-  <canvas
-    class="border-4 border-blue-500 w-full canvas"
-    ref="canvasRef"
-    @mousedown="startDrawing"
-    @mousemove="draw"
-    @mouseup="stopDrawing"
-    @mouseout="stopDrawing"
-  >
+  <canvas class="border-4 border-blue-500 w-full canvas" ref="canvasRef" @mousedown="startDrawing" @mousemove="draw"
+    @mouseup="stopDrawing" @mouseout="stopDrawing">
   </canvas>
 </template>
 <script setup lang="ts">
 import { clearCanvas, drawLine } from "../utils/canvas";
 import { ref, onMounted, withCtx } from "vue";
 import { useDrawingStore } from "../stores/useDrawingStore";
+import { useSocketStore } from "@/stores/useSocketStore";
 // stockage du store dans une variable
 const drawingStore = useDrawingStore();
+
+const socketStore = useSocketStore();
 // récupérer
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 // coordonnées du dernier point
@@ -35,6 +32,8 @@ const startDrawing = (event: MouseEvent) => {
     x: event.clientX - rect.left,
     y: event.clientY - rect.top,
   };
+
+
 };
 
 // Fonction d'arrêt du dessin
@@ -80,12 +79,18 @@ const draw = (e: MouseEvent) => {
   // si l'élément n'existe pas, ne rien retourner
   if (!ctx) return;
 
-  drawLine(ctx,lastPoint.value,currentPoint, drawingStore.color, drawingStore.lineWidth, drawingStore.isEraser);
-
-  lastPoint.value = currentPoint;
+  if (!lastPoint.value) return;
+  drawLine(ctx, lastPoint.value, currentPoint, drawingStore.color, drawingStore.lineWidth, drawingStore.isEraser);
+  socketStore.emitEvent('draw', {
+    points: [lastPoint.value, currentPoint],
+    color: drawingStore.color,
+    lineWidth: drawingStore.lineWidth,
+    isEraser: drawingStore.isEraser
+  }); lastPoint.value = currentPoint;
 };
 
 onMounted(() => {
+  socketStore.connectSocket();
   // appel de la fonction de redimension lors du montage du composant
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
