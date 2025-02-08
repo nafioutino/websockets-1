@@ -91,6 +91,16 @@ const draw = (e: MouseEvent) => {
 
 onMounted(() => {
   socketStore.connectSocket();
+  socketStore.socket?.on('serverDraw', (data: any) => {
+    console.log('data from server',data);
+    const canvas = canvasRef.value;
+    const ctx = canvas?.getContext("2d");
+    if (!ctx)return;
+    drawLine(ctx, data.points[0], data.points[1], data.color, data.lineWidth, data.isEraser);
+
+
+
+  })
   // appel de la fonction de redimension lors du montage du composant
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();

@@ -13,6 +13,5 @@ app.use(createPinia())
 app.use(router)
 app.use(Toast)
 
-const clientWs = new WebSocket('ws://localhost:3000')
 
 app.mount('#app')

@@ -24,16 +24,16 @@ const io = require('socket.io')(4000,{
 });
 
 io.on('connection', (socket) => {
-  socket.emit('hello', 'Hello from server');
-  console.log('a user connected', socket.connected);
-  console.log("Socket Id :", socket.id);
-  socket.on('disconnect', () => {
-    console.log('user disconnected', socket.connected);
-  });
+  // socket.emit('hello', 'Hello from server');
+  // console.log('a user connected', socket.connected);
+  // console.log("Socket Id :", socket.id);
+  // socket.on('disconnect', () => {
+  //   console.log('user disconnected', socket.connected);
+  // });
 
   socket.on('draw', (data) => {
-    log(data);
-    socket.broadcast.emit('draw', data);
+    console.log(data);
+    socket.broadcast.emit('serverDraw', data);
   });
 });
 
