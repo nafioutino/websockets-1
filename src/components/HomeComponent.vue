@@ -6,83 +6,61 @@
     <div class="border-2 flex-1 border-blue-500">
       <CanvasComponent class="border-2 border-black-500" />
     </div>
+    
+    <!-- Bouton pour ouvrir le chat -->
+    <MessageSquareText
+      :size="40"
+      class="text-4xl text-blue-500 cursor-pointer"
+      style="position: absolute; top: 96%; left: 95%; transform: translate(-50%, -50%);"
+      @click="isChatOpen = true"
+    />
+    
+    <!-- Modal de chat -->
+    <div v-if="isChatOpen" class="fixed inset-0 flex items-center justify-center">
+      <div class="bg-gray-200 p-6 rounded-lg shadow-lg w-96 relative">
+        <button @click="isChatOpen = false" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">&times;</button>
+        <h2 class="text-lg text-white font-bold text-gray-700 mb-4 bg-blue-500 rounded">Chat</h2>
+        <div class="bg-gray-100 p-4 rounded-lg h-60 overflow-y-auto" style="background-image: repeating-linear-gradient(45deg, #ddd 0px, #ddd 1px, transparent 1px, transparent 20px);">
+          <p v-for="(msg, index) in messages" :key="index" class="mb-2 text-gray-800">{{ msg }}</p>
+        </div>
+        <input 
+          v-model="newMessage" 
+          @keyup.enter="sendMessage" 
+          class="w-full mt-4 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Tapez votre message..."
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import ToolBarComponent from './ToolBarComponent.vue';
 import CanvasComponent from './CanvasComponent.vue';
-import { POSITION, useToast } from 'vue-toastification';
+import { MessageSquareText } from 'lucide-vue-next';
 import { useSocketStore } from '@/stores/useSocketStore';
+import { useToast } from 'vue-toastification';
 
-const socketStore = useSocketStore();
-const socket = ref(null);
-const socketMessage = ref('');
 const toast = useToast();
+const isChatOpen = ref(false);
+const messages = ref<string[]>([]);
+const newMessage = ref('');
+const socketStore  = useSocketStore();
 
-const fetchSockets = async () => {
-  await socketStore.connectSocket();
-  socket.value = socketStore.socket;
-  socketMessage.value = socketStore.message;
-};
-// Fonction pour gérer les messages reçus
-const handleSocketMessage = (data: any) => {
-  socketMessage.value = data;
-  toast.success(`Message reçu 🎉 : ${data}`, {
-    position: POSITION.TOP_CENTER ,// Position du toast
-    timeout: 5000, // Durée d'affichage en millisecondes
-    closeOnClick: true, // Fermer le toast en cliquant dessus
-    pauseOnHover: true, // Mettre en pause le timeout quand la souris est sur le toast
-    draggable: true, // Permettre de faire glisser le toast pour le fermer
-    draggablePercent: 0.6, // Pourcentage de glissement nécessaire pour fermer le toast
-    showCloseButtonOnHover: true, // Afficher le bouton de fermeture au survol
-    hideProgressBar: false, // Masquer la barre de progression
-    closeButton: 'button', // Utiliser un bouton pour fermer le toast
-    icon: false, // Afficher une icône
-    rtl: false, // Direction du texte (de gauche à droite)
-  });
- 
-};
-
-// Fonction pour gérer les erreurs de socket
-const handleSocketError = (error: any) => {
-  console.error('Erreur de socket : ', error);
-  toast.error('Une erreur est survenue lors de la connexion au socket.');
+const sendMessage = () => {
+  if (newMessage.value.trim() !== '') {
+    messages.value.push(newMessage.value);
+    socketStore.emitEvent('chat message', messages.value);
+    newMessage.value = '';
+  }
 };
 
 onMounted(() => {
-  fetchSockets();
+  socketStore.connectSocket();
+  socketStore.socket?.on('serverMessage', (msg: string[]) => {
+    console.log(msg);
+    messages.value = msg;
+  });
 });
-
-// onUnmounted(() => {
-//   // Nettoyer les écouteurs de socket pour éviter les fuites de mémoire
-//   socket.off('hello', handleSocketMessage);
-//   socket.off('error', handleSocketError);
-// });
 </script>
-
-<style>
-/* Ajoutez des styles personnalisés si nécessaire */
-.flex {
-  display: flex;
-}
-.h-screen {
-  height: 100vh;
-}
-.w1 {
-  width: 33.333333%;
-}
-.border-2 {
-  border-width: 2px;
-}
-.border-blue-500 {
-  border-color: #3b82f6;
-}
-.border-black-500 {
-  border-color: #000;
-}
-.flex-1 {
-  flex: 1;
-}
-</style>

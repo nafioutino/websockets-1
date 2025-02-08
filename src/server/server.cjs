@@ -16,7 +16,7 @@ app.use(cors);
 app.use(express.static(join(__dirname, '../dist')));
 
 
-const io = require('socket.io')(4000,{
+const io = require('socket.io')(4000, {
   cors: {
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST'],
@@ -34,6 +34,11 @@ io.on('connection', (socket) => {
   socket.on('draw', (data) => {
     console.log(data);
     socket.broadcast.emit('serverDraw', data);
+  });
+
+  socket.on('chat message', (msg) => {
+    console.log(msg)
+    socket.broadcast.emit('serverMessage', msg);
   });
 });
 

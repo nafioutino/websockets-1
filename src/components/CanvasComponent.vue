@@ -2,12 +2,15 @@
   <canvas class="border-4 border-blue-500 w-full canvas" ref="canvasRef" @mousedown="startDrawing" @mousemove="draw"
     @mouseup="stopDrawing" @mouseout="stopDrawing">
   </canvas>
+
 </template>
 <script setup lang="ts">
 import { clearCanvas, drawLine } from "../utils/canvas";
 import { ref, onMounted, withCtx } from "vue";
 import { useDrawingStore } from "../stores/useDrawingStore";
 import { useSocketStore } from "@/stores/useSocketStore";
+import { MessageSquareText } from 'lucide-vue-next';
+
 // stockage du store dans une variable
 const drawingStore = useDrawingStore();
 
